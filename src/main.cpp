@@ -3,8 +3,11 @@
 int main()
 {
     //Initiliaze width and height of screen
-	int width = 2560;
-	int height = 1600;
+	int width = 1920;
+	int height = 1080;
+	sf::Clock clock;
+
+	bool mouseHidden = false;
 
     //Create a window and set frame limit 60
 	sf::RenderWindow window(sf::VideoMode(width, height), "Test", sf::Style::Default);
@@ -17,7 +20,7 @@ int main()
     
     //Create shader and get it from file .frag
 	sf::Shader shader;
-	shader.loadFromFile("src/OutputShader.frag", sf::Shader::Fragment);
+	shader.loadFromFile("./src/OutputShader.frag", sf::Shader::Fragment);
 	shader.setUniform("u_resolution", sf::Vector2f(width, height));
 
     //Standart window loop
@@ -32,15 +35,22 @@ int main()
 			}
 			else if (event.type == sf::Event::KeyPressed)
 			{
-				if (event.key.code == sf::Keyboard::Escape)
+				if (event.key.code == sf::Keyboard::Escape && !mouseHidden)
+				{
 					window.setMouseCursorVisible(false);
+					mouseHidden = true;
+				}
+				else if (event.key.code == sf::Keyboard::Escape && mouseHidden)
+				{
+					window.setMouseCursorVisible(true);
+					mouseHidden = false;
+				}
 			}
 		}
-        //Clearing previous frame
-        window.clear(sf::Color::Cyan);
 
         //Drawing
 		window.draw(emptySprite, &shader);
+		shader.setUniform("u_time", clock.getElapsedTime().asSeconds());
 
         //Display current frame
 		window.display();

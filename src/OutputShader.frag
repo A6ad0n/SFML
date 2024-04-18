@@ -1,4 +1,5 @@
 uniform vec2 u_resolution;
+uniform float u_time;
 
 
 float sphereIntersection(in vec3 origin, in vec3 dir, float radius) 
@@ -34,15 +35,36 @@ float sphereIntersection(in vec3 origin, in vec3 dir, float radius)
         return max(dist1, dist2);
 }
 
+float rayCast(float dist, in vec3 dir, in vec3 origin)
+{
+	/*
+		@return float
+
+		This function returns color considering light.
+		The light source moves along cos and sin functions of time.
+		We have diffuse and specular reflection of rays.
+		We get max of it, because dot(..., n) can be < 0.
+	*/
+	float density = 0.5;
+	vec3 pos = dir * dist + origin; //position of intersection
+	vec3 n = pos;
+	vec3 light = normalize(vec3(cos(u_time), 0.75, sin(u_time))); //direction of light
+	float diffuse = max(0.0, dot(light, n)) * density;
+	float specular = max(0.0, pow(dot(reflect(dir, n), light), 32.0));
+	return diffuse + specular;
+}
 
 void main() 
 {
 	vec2 uv = (gl_TexCoord[0].xy - 0.5) * u_resolution / u_resolution.y;
-	vec3 rayOrigin = vec3(-10.0, 3.0, 2.5);
-	vec3 rayDir = normalize(vec3(1.0, uv));
-	float T = sphereIntersection(rayOrigin, rayDir, 1.0);
-	if (T >= 0.0)
-		gl_FragColor = vec4(normalize(rayDir * T + rayOrigin) * 0.5 + 0.5, 1.0);
+	vec3 rayOrigin = vec3(-5.0, 0.0, 0.0); //Cam position
+	vec3 rayDir = normalize(vec3(1.0, uv)); //Direction of rays
+	float T = sphereIntersection(rayOrigin, rayDir, 1.0); //Distance from origin to sphere
+	vec3 light = vec3(rayCast(T, rayDir, rayOrigin));
+	vec3 color;
+	if (T < 0.0)
+		color = vec3(0.0);
 	else
-		gl_FragColor = vec4(vec3(0.6), 1.0);
+		color = light;
+	gl_FragColor = vec4(color, 1.0);
 }
