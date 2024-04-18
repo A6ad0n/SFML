@@ -18,6 +18,7 @@ int main()
     //Create shader and get it from file .frag
 	sf::Shader shader;
 	shader.loadFromFile("src/OutputShader.frag", sf::Shader::Fragment);
+	shader.setUniform("u_resolution", sf::Vector2f(width, height));
 
     //Standart window loop
 	while (window.isOpen())
@@ -28,6 +29,11 @@ int main()
 			if (event.type == sf::Event::Closed)
 			{
 				window.close();
+			}
+			else if (event.type == sf::Event::KeyPressed)
+			{
+				if (event.key.code == sf::Keyboard::Escape)
+					window.setMouseCursorVisible(false);
 			}
 		}
         //Clearing previous frame
