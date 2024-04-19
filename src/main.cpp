@@ -12,19 +12,18 @@ int main()
 	int height = desktopMode.height;
 	sf::Clock clock;
 
-	bool mouseHidden = false;
-	float mouseX = 0.0f, mouseY = 0.0f;
-	sf::Vector2f mouse;
-	float mouseSensivity = 1.0f;
+	bool mouseHidden = true;
+	int mouseX = width/2, mouseY = height/2;
+	float mouseSensivity = 0.0f;
 
 	bool wasdud[6] = {false, false, false, false, false, false};
 	sf::Vector3f position = sf::Vector3f(-5.0f, 0.0f, 0.0f);
-	sf::Vector3f dir = sf::Vector3f(0.0f, 0.0f, 0.0f);
-	float speed = 0.2f;
+	float speed = 0.05f;
 
     //Create a window and set frame limit 60
 	sf::RenderWindow window(sf::VideoMode(width, height), "Test", sf::Style::Fullscreen);
 	window.setFramerateLimit(60);
+	window.setMouseCursorVisible(false);
 
     //Create empty sprite, this sprite reference to empty texture
 	sf::RenderTexture emptyTexture;
@@ -66,8 +65,8 @@ int main()
 			{
 				if (mouseHidden)
 				{
-					mouseX += event.mouseMove.x;
-					mouseY += event.mouseMove.y;
+					mouseX += event.mouseMove.x - width / 2;
+					mouseY += event.mouseMove.y - height / 2;
 					sf::Mouse::setPosition(sf::Vector2i(width / 2, height / 2), window);
 				}
 			}
@@ -107,16 +106,31 @@ int main()
 
 		if (mouseHidden) //Moving cam
 		{
-			if (wasdud[0]) position.x += speed;
-			else if (wasdud[1]) position.y -= speed;
-			else if (wasdud[2]) position.x -= speed;
-			else if (wasdud[3]) position.y += speed;
-			else if (wasdud[4]) position.z -= speed;
+			sf::Vector3f dir = sf::Vector3f(0.0f, 0.0f, 0.0f);
+			sf::Vector3f dirTmp;
+			if (wasdud[0]) 
+				dir = sf::Vector3f(1.0f, 0.0f, 0.0f);
+			else if (wasdud[2]) 
+				dir = sf::Vector3f(-1.0f, 0.0f, 0.0f);
+			if (wasdud[1]) 
+				dir += sf::Vector3f(0.0f, -1.0f, 0.0f);
+			else if (wasdud[3]) dir += sf::Vector3f(0.0f, 1.0f, 0.0f);
+
+			float mx = ((float)mouseX / width - 0.5f) * mouseSensivity;
+			float my = ((float)mouseY / height - 0.5f) * mouseSensivity;
+			dirTmp.z = dir.z * cos(-my) - dir.x * sin(-my);
+			dirTmp.x = dir.z * sin(-my) + dir.x * cos(-my);
+			dirTmp.y = dir.y;
+			dir.x = dirTmp.x * cos(mx) - dirTmp.y * sin(mx);
+			dir.y = dirTmp.x * sin(mx) + dirTmp.y * cos(mx);
+			dir.z = dirTmp.z;
+			position += dir * speed;
+			if (wasdud[4]) position.z -= speed;
 			else if (wasdud[5]) position.z += speed;
 
-			float mx = ((float)mouseX / width) * mouseSensivity;
-			float my = ((float)mouseY / height) * mouseSensivity;
-			mouse = sf::Vector2f(mx, my);
+			shader.setUniform("u_time", clock.getElapsedTime().asSeconds());
+			shader.setUniform("u_position", position);
+			shader.setUniform("u_mouse", sf::Vector2f(mx, my));
 			
 			std::ostringstream ss;
 			ss << "x: " << position.x << "\ny: " << position.y << "\nz: " << position.z <<
@@ -131,9 +145,6 @@ int main()
 		{
 			window.draw(text);
 		}
-		shader.setUniform("u_time", clock.getElapsedTime().asSeconds());
-		shader.setUniform("u_position", position);
-		shader.setUniform("u_mouse", mouse);
 
         //Display current frame
 		window.display();
