@@ -8,6 +8,7 @@ uniform vec3 u_position;
 uniform vec3 u_mouse;
 
 const float MaxRenderingDist = 10000.0;
+vec3 light = normalize(vec3(sin(u_time * 0.5), 0.5, cos(u_time * 0.5) - 0.9));
 
 mat2 rotateDir(in float angle)
 {
@@ -62,7 +63,7 @@ vec2 planeIntersection(in vec3 origin, in vec3 dir, in vec4 position)
 	return vec2(-(dot(origin, position.xyz) + position.w) / dot(dir, position.xyz));
 }
 
-void createSphere(in vec3 origin, in vec3 dir, in vec3 position, in float radius, inout vec2 minIntersection, inout vec3 n)
+void createSphere(in vec3 origin, in vec3 dir, in vec3 position, in float radius, inout vec2 minIntersection, inout vec3 n, inout vec3 color)
 {
 	/*
 		@return minIntersection and n
@@ -75,10 +76,11 @@ void createSphere(in vec3 origin, in vec3 dir, in vec3 position, in float radius
 		minIntersection = intersection;
 		vec3 intersectionPos = dir * intersection.x + origin;
 		n = (intersectionPos - position) / radius;
+		color = vec3(1.0, 0.5, 1.0);
 	}
 }
 
-void createPlane(in vec3 origin, in vec3 dir, in vec3 position, inout vec2 minIntersection, inout vec3 n)
+void createPlane(in vec3 origin, in vec3 dir, in vec3 position, inout vec2 minIntersection, inout vec3 n, inout vec3 color)
 {
 	/*
 		@return minIntersection and n
@@ -91,12 +93,18 @@ void createPlane(in vec3 origin, in vec3 dir, in vec3 position, inout vec2 minIn
 	{
 		minIntersection = intersection;
 		n = position;
+		color = vec3(0.5);
 	}
 }
 
+vec3 getSky(in vec3 dir) {
+	vec3 color = vec3(0.0, 0.5, 0.9);
+	vec3 sun = vec3(0.95, 0.9, 1.0);
+	sun *= max(0.0, pow(dot(dir, light), 32.0));
+	return clamp(sun + color, 0.0, 1.0);
+}
 
-
-vec3 rayCast(in vec3 origin, in vec3 dir)
+vec3 rayCast(inout vec3 origin, inout vec3 dir)
 {
 	/*
 		@return vec3
@@ -111,24 +119,36 @@ vec3 rayCast(in vec3 origin, in vec3 dir)
 	vec2 minIntersection = vec2(MaxRenderingDist); //means nearest intersection with any object of scene.
 	vec2 intersection;
 	vec3 n;
+	vec3 color;
 
-	float density = 0.5;
+	float density = 1.0;
 
-	createSphere(origin, dir, vec3(0.0, 0.0, 0.0), 0.5, minIntersection, n);
-	createSphere(origin, dir, vec3(0.0, -1.0, 0.0), 0.5, minIntersection, n);
-	createSphere(origin, dir, vec3(0.0, 1.0, 0.0), 0.5, minIntersection, n);
-	createSphere(origin, dir, vec3(0.0, 0.0, -1.0), 0.5, minIntersection, n);
-	createSphere(origin, dir, vec3(0.0, 0.0, -2.0), 0.5, minIntersection, n);
+	createSphere(origin, dir, vec3(0.0, 0.0, 0.0), 0.5, minIntersection, n, color);
+	createSphere(origin, dir, vec3(0.0, -1.0, 0.0), 0.5, minIntersection, n, color);
+	createSphere(origin, dir, vec3(0.0, 1.0, 0.0), 0.5, minIntersection, n, color);
+	createSphere(origin, dir, vec3(0.0, 0.0, -1.0), 0.5, minIntersection, n, color);
+	createSphere(origin, dir, vec3(0.0, 0.0, -2.0), 0.5, minIntersection, n, color);
 
-	createPlane(origin, dir, vec3(0.0, 0.0, -1.0), minIntersection, n);
+	createPlane(origin, dir, vec3(0.0, 0.0, -1.0), minIntersection, n, color);
 
-	if(minIntersection.x == MaxRenderingDist)
-		return vec3(0.0, 0.5, 0.9);
+	if(minIntersection.x == MaxRenderingDist) //If there's no intersection it will be sky.
+		return vec3(-1);
 
-	vec3 light = normalize(vec3(sin(u_time * 0.3), 0.75, cos(u_time * 0.3))); //direction of light
 	float diffuse = max(0.0, dot(light, n)) * density;
 	float specular = pow(max(0.0, dot(reflect(dir, n), light)), 32.0) * density;
-	vec3 color = vec3(diffuse + specular);
+	color *= mix(diffuse, specular, 0.5);
+	origin += dir * (minIntersection.x - 0.001);
+	return color;
+}
+
+vec3 rayTrace(in vec3 origin, in vec3 dir)
+{
+	vec3 color = rayCast(origin, dir);
+	if (color.x == -1.0)
+		return getSky(dir);
+	vec3 dirLight = light;
+	if (rayCast(origin, dirLight).x != -1.0)
+		color *= 0.0;
 	return color;
 }
 
@@ -139,6 +159,9 @@ void main()
 	vec3 rayDir = normalize(vec3(1.0, uv)); //Direction of rays
 	//rayDir.zx *= rotateDir(-u_mouse.y);
 	//rayDir.xy *= rotateDir(u_mouse.x);
-	vec3 color = rayCast(rayOrigin, rayDir);
+	vec3 color = rayTrace(rayOrigin, rayDir);
+	color.r = pow(color.r, 0.45);
+	color.g = pow(color.g, 0.45);
+	color.b = pow(color.b, 0.45);
 	gl_FragColor = vec4(color, 1.0);
 }
