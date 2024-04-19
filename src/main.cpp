@@ -8,6 +8,9 @@ int main()
 	sf::Clock clock;
 
 	bool mouseHidden = false;
+	bool wasdud[6] = {false, false, false, false, false, false};
+	sf::Vector3f position = sf::Vector3f(-5.0, 0.0, 0.0);
+	float speed = 0.2;
 
     //Create a window and set frame limit 60
 	sf::RenderWindow window(sf::VideoMode(width, height), "Test", sf::Style::Default);
@@ -45,12 +48,38 @@ int main()
 					window.setMouseCursorVisible(true);
 					mouseHidden = false;
 				}
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::W)) wasdud[0] = true;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::A)) wasdud[1] = true;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::S)) wasdud[2] = true;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::D)) wasdud[3] = true;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Space)) wasdud[4] = true;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::LShift)) wasdud[5] = true;
 			}
+			else if (event.type == sf::Event::KeyReleased)
+			{
+				if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::W)) wasdud[0] = false;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::A)) wasdud[1] = false;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::S)) wasdud[2] = false;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::D)) wasdud[3] = false;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Space)) wasdud[4] = false;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::LShift)) wasdud[5] = false;
+			}
+		}
+
+		if (mouseHidden) //Moving cam
+		{
+			if (wasdud[0]) position.x += speed;
+			else if (wasdud[1]) position.y -= speed;
+			else if (wasdud[2]) position.x -= speed;
+			else if (wasdud[3]) position.y += speed;
+			else if (wasdud[4]) position.z -= speed;
+			else if (wasdud[5]) position.z += speed;
 		}
 
         //Drawing
 		window.draw(emptySprite, &shader);
 		shader.setUniform("u_time", clock.getElapsedTime().asSeconds());
+		shader.setUniform("u_position", position);
 
         //Display current frame
 		window.display();

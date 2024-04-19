@@ -1,5 +1,10 @@
+#ifdef GL_ES
+precision highp float;
+#endif
+
 uniform vec2 u_resolution;
 uniform float u_time;
+uniform vec3 u_position;
 
 
 float sphereIntersection(in vec3 origin, in vec3 dir, float radius) 
@@ -57,7 +62,7 @@ float rayCast(float dist, in vec3 dir, in vec3 origin)
 void main() 
 {
 	vec2 uv = (gl_TexCoord[0].xy - 0.5) * u_resolution / u_resolution.y;
-	vec3 rayOrigin = vec3(-5.0, 0.0, 0.0); //Cam position
+	vec3 rayOrigin = u_position; //Cam position
 	vec3 rayDir = normalize(vec3(1.0, uv)); //Direction of rays
 	float T = sphereIntersection(rayOrigin, rayDir, 1.0); //Distance from origin to sphere
 	vec3 light = vec3(rayCast(T, rayDir, rayOrigin));
