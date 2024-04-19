@@ -50,7 +50,7 @@ float rayCast(float dist, in vec3 dir, in vec3 origin)
 	vec3 n = pos;
 	vec3 light = normalize(vec3(cos(u_time), 0.75, sin(u_time))); //direction of light
 	float diffuse = max(0.0, dot(light, n)) * density;
-	float specular = max(0.0, pow(dot(reflect(dir, n), light), 32.0));
+	float specular = pow(max(0.0, dot(reflect(dir, n), light)), 32.0) * density;
 	return diffuse + specular;
 }
 
