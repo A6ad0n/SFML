@@ -5,7 +5,14 @@ precision highp float;
 uniform vec2 u_resolution;
 uniform float u_time;
 uniform vec3 u_position;
+uniform vec3 u_mouse;
 
+mat2 rotateDir(float angle)
+{
+	float s = sin(angle);
+	float c = cos(angle);
+	return mat2(c, -s, s, c);
+}
 
 float sphereIntersection(in vec3 origin, in vec3 dir, float radius) 
 {
@@ -64,6 +71,8 @@ void main()
 	vec2 uv = (gl_TexCoord[0].xy - 0.5) * u_resolution / u_resolution.y;
 	vec3 rayOrigin = u_position; //Cam position
 	vec3 rayDir = normalize(vec3(1.0, uv)); //Direction of rays
+	rayDir.zx *= rotateDir(-u_mouse.y);
+	rayDir.xy *= rotateDir(-u_mouse.x);
 	float T = sphereIntersection(rayOrigin, rayDir, 1.0); //Distance from origin to sphere
 	vec3 light = vec3(rayCast(T, rayDir, rayOrigin));
 	vec3 color;
