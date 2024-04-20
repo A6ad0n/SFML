@@ -5,7 +5,7 @@ precision highp float;
 uniform vec2 u_resolution;
 uniform float u_time;
 uniform vec3 u_position;
-uniform vec3 u_mouse;
+uniform vec2 u_mouse;
 
 const float MaxRenderingDist = 10000.0;
 vec3 light = normalize(vec3(sin(u_time * 0.5), 0.5, cos(u_time * 0.5) - 0.9));
@@ -98,6 +98,11 @@ void createPlane(in vec3 origin, in vec3 dir, in vec3 position, inout vec2 minIn
 }
 
 vec3 getSky(in vec3 dir) {
+	/*
+		@return vec3
+
+		Return sky with sun, sun is done like a specular reflection.
+	*/
 	vec3 color = vec3(0.0, 0.5, 0.9);
 	vec3 sun = vec3(0.95, 0.9, 1.0);
 	sun *= max(0.0, pow(dot(dir, light), 32.0));
@@ -155,13 +160,16 @@ vec3 rayTrace(in vec3 origin, in vec3 dir)
 void main() 
 {
 	vec2 uv = (gl_TexCoord[0].xy - 0.25) * u_resolution / u_resolution.y;
-	vec3 rayOrigin = u_position; //Cam position
-	vec3 rayDir = normalize(vec3(1.0, uv)); //Direction of rays
-	//rayDir.zx *= rotateDir(-u_mouse.y);
-	//rayDir.xy *= rotateDir(u_mouse.x);
+	vec3 rayOrigin = u_position;
+	vec3 rayDir = normalize(vec3(1.0, uv));
+	rayDir.zx *= rotateDir(-u_mouse.y);
+	rayDir.xy *= rotateDir(u_mouse.x);
 	vec3 color = rayTrace(rayOrigin, rayDir);
+	
+	//Gamma correction
 	color.r = pow(color.r, 0.45);
 	color.g = pow(color.g, 0.45);
 	color.b = pow(color.b, 0.45);
+	
 	gl_FragColor = vec4(color, 1.0);
 }

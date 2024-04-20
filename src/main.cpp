@@ -12,16 +12,19 @@ int main()
 	int height = desktopMode.height;
 	sf::Clock clock;
 
+	//Initiliaze mouse variables
 	bool mouseHidden = true;
-	int mouseX = width/2, mouseY = height/2;
-	float mouseSensivity = 0.0f;
+	int mouseX = 0, mouseY = 0;
+	float mx = 0.0f, my = 0.0f;
+	float mouseSensivity = 1.0f;
 
+	//Initliaze moving variables
 	bool wasdud[6] = {false, false, false, false, false, false};
 	sf::Vector3f position = sf::Vector3f(-5.0f, 0.0f, 0.0f);
 	float speed = 0.05f;
 
-    //Create a window and set frame limit 60
-	sf::RenderWindow window(sf::VideoMode(width, height), "Test", sf::Style::Fullscreen);
+    //Create a window and set frame limit 60, mouse non visible
+	sf::RenderWindow window(sf::VideoMode(width, height), "Demo", sf::Style::Fullscreen);
 	window.setFramerateLimit(60);
 	window.setMouseCursorVisible(false);
 
@@ -30,6 +33,7 @@ int main()
 	emptyTexture.create(width, height);
 	sf::Sprite emptySprite = sf::Sprite(emptyTexture.getTexture());
 
+	//Create font
 	sf::Font font;
     if (!font.loadFromFile("include/Dudka Regular.ttf"))
 	{
@@ -37,12 +41,12 @@ int main()
         return -1;
 	}
 
-    // Создаем объект текста
+    //Create text
     sf::Text text;
     text.setFont(font);
     text.setCharacterSize(24);
     text.setFillColor(sf::Color::White);
-    text.setPosition(100, 100);
+    text.setPosition(20, 20);
 
 
     
@@ -65,8 +69,8 @@ int main()
 			{
 				if (mouseHidden)
 				{
-					mouseX += event.mouseMove.x - width / 2;
-					mouseY += event.mouseMove.y - height / 2;
+					mouseX = event.mouseMove.x - width / 4;
+					mouseY = event.mouseMove.y - height / 4; 
 					sf::Mouse::setPosition(sf::Vector2i(width / 2, height / 2), window);
 				}
 			}
@@ -86,12 +90,21 @@ int main()
 			else if (event.type == sf::Event::KeyPressed)
 			{
 				if (event.key.code == sf::Keyboard::Escape) debug = !debug;
+
 				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::W)) wasdud[0] = true;
 				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::A)) wasdud[1] = true;
 				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::S)) wasdud[2] = true;
 				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::D)) wasdud[3] = true;
 				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Space)) wasdud[4] = true;
 				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::LShift)) wasdud[5] = true;
+
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::O)) mouseSensivity -= 0.1f;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::P)) mouseSensivity += 0.1f;
+
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Num0)) speed += 0.1f;
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Num9)) speed -= 0.1f;
+
+				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Enter)) window.close();
 			}
 			else if (event.type == sf::Event::KeyReleased)
 			{
@@ -108,6 +121,7 @@ int main()
 		{
 			sf::Vector3f dir = sf::Vector3f(0.0f, 0.0f, 0.0f);
 			sf::Vector3f dirTmp;
+
 			if (wasdud[0]) 
 				dir = sf::Vector3f(1.0f, 0.0f, 0.0f);
 			else if (wasdud[2]) 
@@ -116,26 +130,32 @@ int main()
 				dir += sf::Vector3f(0.0f, -1.0f, 0.0f);
 			else if (wasdud[3]) dir += sf::Vector3f(0.0f, 1.0f, 0.0f);
 
-			float mx = ((float)mouseX / width - 0.5f) * mouseSensivity;
-			float my = ((float)mouseY / height - 0.5f) * mouseSensivity;
+			mx += (float)mouseX / width * mouseSensivity;
+			my += (float)mouseY / height * mouseSensivity;
+
 			dirTmp.z = dir.z * cos(-my) - dir.x * sin(-my);
 			dirTmp.x = dir.z * sin(-my) + dir.x * cos(-my);
 			dirTmp.y = dir.y;
 			dir.x = dirTmp.x * cos(mx) - dirTmp.y * sin(mx);
 			dir.y = dirTmp.x * sin(mx) + dirTmp.y * cos(mx);
 			dir.z = dirTmp.z;
+
 			position += dir * speed;
 			if (wasdud[4]) position.z -= speed;
 			else if (wasdud[5]) position.z += speed;
 
+			
+			//Debug text
+			std::ostringstream ss;
+			ss << "x: " << position.x << "\ny: " << position.y << "\nz: " << position.z <<
+				"\n\nMouse Sensivity: " << mouseSensivity <<
+				"\n\nspeed: " << speed;
+			text.setString(ss.str());
+			
+			//Sending uniforms
 			shader.setUniform("u_time", clock.getElapsedTime().asSeconds());
 			shader.setUniform("u_position", position);
 			shader.setUniform("u_mouse", sf::Vector2f(mx, my));
-			
-			std::ostringstream ss;
-			ss << "x: " << position.x << "\ny: " << position.y << "\nz: " << position.z <<
-				"\n\nmouse x: " << mx << "\nmouse y: " << my;
-			text.setString(ss.str());
 		}
 		window.clear();
 
