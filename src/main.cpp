@@ -5,18 +5,21 @@
 int main()
 {
 	bool debug = false;
-
+	sf::Clock clock;
+	
     //Initiliaze width and height of screen
 	sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
 	int width = desktopMode.width;
 	int height = desktopMode.height;
-	sf::Clock clock;
+	
+	
 
 	//Initiliaze mouse variables
 	bool mouseHidden = true;
 	int mouseX = 0, mouseY = 0;
 	float mx = 0.0f, my = 0.0f;
 	float mouseSensivity = 1.0f;
+	float FOV = 0.6;
 
 	//Initliaze moving variables
 	bool wasdud[6] = {false, false, false, false, false, false};
@@ -47,8 +50,6 @@ int main()
     text.setCharacterSize(24);
     text.setFillColor(sf::Color::White);
     text.setPosition(20, 20);
-
-
     
     //Create shader and get it from file .frag
 	sf::Shader shader;
@@ -61,21 +62,22 @@ int main()
 		sf::Event event;
 		while (window.pollEvent(event))
 		{
-			if (event.type == sf::Event::Closed)
+			switch (event.type)
 			{
+			case sf::Event::Closed:
 				window.close();
-			}
-			else if (event.type == sf::Event::MouseMoved)
-			{
+				break;
+			
+			case sf::Event::MouseMoved:
 				if (mouseHidden)
 				{
 					mouseX = event.mouseMove.x - width / 4;
 					mouseY = event.mouseMove.y - height / 4; 
 					sf::Mouse::setPosition(sf::Vector2i(width / 2, height / 2), window);
 				}
-			}
-			else if (event.type == sf::Event::MouseButtonPressed)
-			{
+				break;
+			
+			case sf::Event::MouseButtonPressed:
 				if (!mouseHidden)
 				{
 					window.setMouseCursorVisible(false);
@@ -86,34 +88,89 @@ int main()
 					window.setMouseCursorVisible(true);
 					mouseHidden = false;
 				}
-			}
-			else if (event.type == sf::Event::KeyPressed)
-			{
-				if (event.key.code == sf::Keyboard::Escape) debug = !debug;
+				break;
 
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::W)) wasdud[0] = true;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::A)) wasdud[1] = true;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::S)) wasdud[2] = true;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::D)) wasdud[3] = true;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Space)) wasdud[4] = true;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::LShift)) wasdud[5] = true;
+			case sf::Event::KeyPressed:
+				switch (event.key.code)
+				{
+				case sf::Keyboard::Escape:
+					debug = !debug;
+					break;
+				case sf::Keyboard::W:
+					wasdud[0] = true;
+					break;
+				case sf::Keyboard::A:
+					wasdud[1] = true;
+					break;
+				case sf::Keyboard::S:
+					wasdud[2] = true;
+					break;
+				case sf::Keyboard::D:
+					wasdud[3] = true;
+					break;
+				case sf::Keyboard::Space:
+					wasdud[4] = true;
+					break;
+				case sf::Keyboard::LShift:
+					wasdud[5] = true;
+					break;
+				
+				case sf::Keyboard::O:
+					mouseSensivity -= 0.1f;
+					break;
+				case sf::Keyboard::P:
+					mouseSensivity += 0.1f;
+					break;
+				case sf::Keyboard::Num0:
+					speed += 0.1f;
+					break;
+				case sf::Keyboard::Num9:
+					speed -= 0.1f;
+					break;
+				case sf::Keyboard::Num8:
+					FOV += 0.1f;
+					break;
+				case sf::Keyboard::Num7:
+					FOV -= 0.1f;
+					break;
+				
+				case sf::Keyboard::Enter:
+					window.close();
+					break;
+				
+				default:
+					break;
+				}
+				break;
 
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::O)) mouseSensivity -= 0.1f;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::P)) mouseSensivity += 0.1f;
-
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Num0)) speed += 0.1f;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Num9)) speed -= 0.1f;
-
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Enter)) window.close();
-			}
-			else if (event.type == sf::Event::KeyReleased)
-			{
-				if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::W)) wasdud[0] = false;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::A)) wasdud[1] = false;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::S)) wasdud[2] = false;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::D)) wasdud[3] = false;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::Space)) wasdud[4] = false;
-				else if (event.key.code == sf::Keyboard::localize(sf::Keyboard::Scancode::LShift)) wasdud[5] = false;
+			case sf::Event::KeyReleased:
+				switch (event.key.code)
+				{
+				case sf::Keyboard::W:
+					wasdud[0] = false;
+					break;
+				case sf::Keyboard::A:
+					wasdud[1] = false;
+					break;
+				case sf::Keyboard::S:
+					wasdud[2] = false;
+					break;
+				case sf::Keyboard::D:
+					wasdud[3] = false;
+					break;
+				case sf::Keyboard::Space:
+					wasdud[4] = false;
+					break;
+				case sf::Keyboard::LShift:
+					wasdud[5] = false;
+					break;
+				
+				default:
+					break;
+				}
+			
+			default:
+				break;
 			}
 		}
 
@@ -128,7 +185,8 @@ int main()
 				dir = sf::Vector3f(-1.0f, 0.0f, 0.0f);
 			if (wasdud[1]) 
 				dir += sf::Vector3f(0.0f, -1.0f, 0.0f);
-			else if (wasdud[3]) dir += sf::Vector3f(0.0f, 1.0f, 0.0f);
+			else if (wasdud[3]) 
+				dir += sf::Vector3f(0.0f, 1.0f, 0.0f);
 
 			mx += (float)mouseX / width * mouseSensivity;
 			my += (float)mouseY / height * mouseSensivity;
@@ -149,22 +207,22 @@ int main()
 			std::ostringstream ss;
 			ss << "x: " << position.x << "\ny: " << position.y << "\nz: " << position.z <<
 				"\n\nMouse Sensivity: " << mouseSensivity <<
-				"\n\nspeed: " << speed;
+				"\n\nSpeed: " << speed <<
+				"\n\nFOV: " << FOV;
 			text.setString(ss.str());
 			
 			//Sending uniforms
 			shader.setUniform("u_time", clock.getElapsedTime().asSeconds());
 			shader.setUniform("u_position", position);
 			shader.setUniform("u_mouse", sf::Vector2f(mx, my));
+			shader.setUniform("u_FOV", FOV);
 		}
 		window.clear();
 
         //Drawing
 		window.draw(emptySprite, &shader);
 		if (debug)
-		{
 			window.draw(text);
-		}
 
         //Display current frame
 		window.display();
